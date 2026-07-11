@@ -1,8 +1,8 @@
 FROM --platform=$TARGETOS/$TARGETARCH debian:bookworm-slim
 
 LABEL org.opencontainers.image.authors="Cage"
-LABEL org.opencontainers.image.source="https://github.com/darkycage/cage-ptero-eggs"
-LABEL version="1.0"
+LABEL org.opencontainers.image.source="https://github.com/DarkyCage/cage-ptero-eggs"
+LABEL org.opencontainers.image.description="SinusBot runtime image for Pterodactyl"
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -47,7 +47,7 @@ RUN apt-get update \
         x11-xkb-utils \
         x11vnc \
         xvfb \
-    && useradd -m -d /home/container container \
+    && useradd --create-home --home-dir /home/container container \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -57,15 +57,13 @@ ENV USER=container
 ENV HOME=/home/container
 
 USER container
-
 WORKDIR /home/container
 
 STOPSIGNAL SIGINT
 
-COPY --chown=container:container ./entrypoint.sh /entrypoint.sh
+COPY --chown=container:container entrypoint.sh /entrypoint.sh
 
 RUN chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/usr/bin/tini", "-g", "--"]
-
 CMD ["/entrypoint.sh"]
