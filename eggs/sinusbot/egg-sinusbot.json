@@ -1,0 +1,42 @@
+{
+  "_comment": "DO NOT EDIT: FILE GENERATED FOR PTERODACTYL PANEL",
+  "meta": {
+    "version": "PTDL_v2",
+    "update_url": null
+  },
+  "exported_at": "2026-07-12T00:00:00+02:00",
+  "name": "SinusBot 1.1 - Cage",
+  "author": "cage@darkycage.com",
+  "description": "SinusBot 1.1 for TeamSpeak and Discord, using Cage's custom Docker image and developer-provided SinusBot build.",
+  "features": null,
+  "docker_images": {
+    "SinusBot": "ghcr.io/darkycage/sinusbot:latest"
+  },
+  "file_denylist": [],
+  "startup": "./sinusbot --override-password=\"${OVERRIDE_PASSWORD}\"",
+  "config": {
+    "files": "{\n  \"config.ini\": {\n    \"parser\": \"file\",\n    \"find\": {\n      \"ListenPort\": \"ListenPort = {{server.build.default.port}}\",\n      \"ListenHost\": \"ListenHost = \\\"0.0.0.0\\\"\"\n    }\n  }\n}",
+    "startup": "{\n  \"done\": \"Initialization complete\"\n}",
+    "logs": "{}",
+    "stop": "^C"
+  },
+  "scripts": {
+    "installation": {
+      "script": "#!/bin/bash\nset -e\n\nSINUSBOT_URL=\"https://github.com/DarkyCage/cage-ptero-eggs/releases/download/v1.1/sinusbot1.1.tar.bz2\"\nTS_VERSION=\"3.5.6\"\nTS_URL=\"https://files.teamspeak-services.com/releases/client/${TS_VERSION}/TeamSpeak3-Client-linux_amd64-${TS_VERSION}.run\"\n\napt-get update\napt-get install -y --no-install-recommends ca-certificates bzip2 wget tar curl\napt-get clean\nrm -rf /var/lib/apt/lists/*\n\ncd /mnt/server\n\nmkdir -p TeamSpeak3-Client-linux_amd64/plugins\nmkdir -p youtube-dlp\n\necho \"Downloading custom SinusBot 1.1 build...\"\nwget --progress=dot:giga -O sinusbot1.1.tar.bz2 \"${SINUSBOT_URL}\"\n\necho \"Extracting SinusBot...\"\ntar -xjf sinusbot1.1.tar.bz2\nrm -f sinusbot1.1.tar.bz2\n\necho \"Downloading TeamSpeak Client ${TS_VERSION}...\"\nwget --progress=dot:giga -O teamspeak-client.run \"${TS_URL}\"\nchmod 0755 teamspeak-client.run\n\n./teamspeak-client.run --tar xfv -C TeamSpeak3-Client-linux_amd64\nrm -f teamspeak-client.run\n\nrm -f TeamSpeak3-Client-linux_amd64/xcbglintegrations/libqxcb-glx-integration.so\n\nchmod +x sinusbot\n\nif [ -f ttshlpr ]; then\n    chmod +x ttshlpr\nfi\n\nif [ ! -f config.ini ]; then\n    cp config.ini.dist config.ini\nfi\n\nsed -i 's|^TS3Path.*|TS3Path = \"/home/container/TeamSpeak3-Client-linux_amd64/ts3client_linux_amd64\"|g' config.ini\n\nif grep -q '^YoutubeDLPath' config.ini; then\n    sed -i 's|^YoutubeDLPath.*|YoutubeDLPath = \"/home/container/youtube-dlp/yt-dlp\"|g' config.ini\nelse\n    echo 'YoutubeDLPath = \"/home/container/youtube-dlp/yt-dlp\"' >> config.ini\nfi\n\nif [ -f plugin/libsoundbot_plugin.so ]; then\n    cp plugin/libsoundbot_plugin.so TeamSpeak3-Client-linux_amd64/plugins/\nfi\n\necho \"Downloading yt-dlp...\"\nwget --progress=dot:giga -O youtube-dlp/yt-dlp https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp\nchmod 0755 youtube-dlp/yt-dlp\n\necho \"-----------------------------------------\"\necho \"SinusBot 1.1 installation completed\"\necho \"-----------------------------------------\"\n",
+      "container": "ghcr.io/ptero-eggs/installers:debian",
+      "entrypoint": "bash"
+    }
+  },
+  "variables": [
+    {
+      "name": "Administrator Password",
+      "description": "Password assigned to the SinusBot administrator account during startup.",
+      "env_variable": "OVERRIDE_PASSWORD",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string|min:8|max:64",
+      "field_type": "text"
+    }
+  ]
+}
